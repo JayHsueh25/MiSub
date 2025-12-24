@@ -38,6 +38,40 @@ onMounted(async () => {
 
 
   initTheme();
+  
+  // 检查伪装配置
+  const currentPath = window.location.pathname;
+  if (currentPath === '/' || currentPath === '') {
+    try {
+      const response = await fetch('/api/disguise-config');
+      if (response.ok) {
+        const data = await response.json();
+        const disguiseConfig = data.disguise;
+        
+        // 如果伪装功能启用,执行伪装逻辑
+        if (disguiseConfig?.enabled) {
+          if (disguiseConfig.pageType === 'redirect') {
+            // 重定向到指定URL
+            window.location.href = disguiseConfig.redirectUrl || 'https://www.bing.com';
+            return;
+          } else if (disguiseConfig.pageType === 'custom') {
+            // 显示自定义HTML
+            document.open();
+            document.write(disguiseConfig.customHtml || '<h1>Welcome</h1>');
+            document.close();
+            return;
+          } else if (disguiseConfig.pageType === 'builtin') {
+            // 重定向到内置模板端点
+            window.location.href = `/disguise-template?type=${disguiseConfig.builtinTemplate || 'search'}`;
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to check disguise config:', e);
+    }
+  }
+  
   await checkSession();
   
   if (sessionState.value === 'loggedIn') {

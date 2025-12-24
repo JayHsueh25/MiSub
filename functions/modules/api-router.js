@@ -119,6 +119,28 @@ export async function handleApiRequest(request, env) {
         return await handleDataRequest(env);
     }
 
+    // Public endpoint for disguise configuration (no auth required)
+    if (path === '/disguise-config') {
+        try {
+            const storage = StorageFactory.create(env);
+            const configData = await storage.get('misub_settings_v1');
+            if (configData) {
+                const settings = typeof configData === 'string' ? JSON.parse(configData) : configData;
+                return createJsonResponse({
+                    disguise: settings.disguise || { enabled: false }
+                });
+            }
+            return createJsonResponse({
+                disguise: { enabled: false }
+            });
+        } catch (e) {
+            console.error('[API Error /disguise-config]', e);
+            return createJsonResponse({
+                disguise: { enabled: false }
+            });
+        }
+    }
+
     if (!await authMiddleware(request, env)) {
         return createJsonResponse({ error: 'Unauthorized' }, 401);
     }
